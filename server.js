@@ -43,6 +43,10 @@ try {
     .filter(x => x && /^[a-z0-9-]+\.(jpg|png|webp)$/.test(x.fil) && x.aar >= 1900 && fs.existsSync(path.join(STD_DIR, x.fil)));
 } catch { }
 
+// serverens egne ansigter til "Veer eller vellyst?": data/ansigter/foedsel og data/ansigter/porno. Ligger der billeder,
+// har alle fester på serveren runden fra start (kan slås fra pr. fest). Mappen hører til data/ og er aldrig med i git.
+const ANS_DIR = path.join(DATA, 'ansigter');
+
 // hemmelighed til værtens adgangsbevis (laves første gang serveren starter)
 const SECRET = (() => {
   const f = path.join(DATA, 'hemmelighed');
@@ -148,7 +152,7 @@ function freeCode() { for (;;) { const c = randomCode(); if (![...rooms.values()
 const saveMeta = r => { try { const t = path.join(r.dir, 'rum.json.tmp'); fs.writeFileSync(t, JSON.stringify(r.meta)); fs.renameSync(t, path.join(r.dir, 'rum.json')); } catch (e) { console.error('rum', e.message); } };
 function openRoom(id, meta) {
   const dir = path.join(RUM_DIR, id);
-  const r = { id, dir, meta, waiting: new Set(), fest: createFest({ dir, std: STD, stdDir: STD_DIR, newCode: freeCode }) };
+  const r = { id, dir, meta, waiting: new Set(), fest: createFest({ dir, std: STD, stdDir: STD_DIR, ansDir: ANS_DIR, newCode: freeCode }) };
   r.fest.onChange(() => { for (const go of [...r.waiting]) go(); });
   rooms.set(id, r);
   return r;

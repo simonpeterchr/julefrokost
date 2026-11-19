@@ -176,6 +176,8 @@ async function main() {
   // samme server sat op som på et domæne: undermappe, opret-kode og https bag en proxy
   console.log('På et domæne (undermappe, opret-kode, proxy)');
   const DATA2 = fs.mkdtempSync(path.join(os.tmpdir(), 'julefrokost-proeve-'));
+  // serveren har sine egne ansigter (data/ansigter): så har alle fester "Veer eller vellyst?" fra start
+  for (const [d, n] of [['foedsel', 2], ['porno', 1]]) { fs.mkdirSync(path.join(DATA2, 'ansigter', d), { recursive: true }); for (let i = 0; i < n; i++) fs.writeFileSync(path.join(DATA2, 'ansigter', d, 'a' + i + '.jpg'), jpeg(2000)); }
   const srv2 = spawn(process.execPath, [path.join(__dirname, '..', 'server.js')], { env: { ...process.env, PORT: String(PORT), DATA: DATA2, PUBLIC_URL: 'https://fest.example/jul', OPRET_KODE: 'kun-for-venner', TRUST_PROXY: '1', BASE: '' }, stdio: ['ignore', 'pipe', 'inherit'] });
   await new Promise(r => srv2.stdout.once('data', r));
   try {
@@ -190,6 +192,17 @@ async function main() {
     const s = (await call('/jul/r/' + r.j.rum + '/api/host', { cookie: r.cookie, headers: px })).j;
     ok(s.join === 'https://fest.example/jul/r/' + r.j.rum + '?k=' && s.site === 'fest.example/jul', 'QR-koden peger på den offentlige adresse');
     ok((await call('/jul/r/' + r.j.rum + '/api/host', { body: { action: 'skaal' }, cookie: r.cookie, headers: { ...px, Origin: 'https://fest.example' } })).j.ok, 'kald fra den offentlige adresse er i orden');
+    const R2 = '/jul/r/' + r.j.rum + '/', H2 = (action, extra) => call(R2 + 'api/host', { body: { action, ...extra }, cookie: r.cookie, headers: px }).then(x => x.j);
+    ok(s.faces === 3, 'serverens tre ansigter er med i en ny fest');
+    let b = (await call(R2 + 'api/billeder', { cookie: r.cookie })).j; ok(b.srvAnsigter === 3 && b.brugAns && b.ansigter.length === 0, 'værtssiden ved, at de er serverens (ikke festens egne)');
+    await wait(27e3); // skålen ovenfor skal være slut, før en quiz kan besvares
+    await H2('face'); let z = (await call(R2 + 'api/tv', { cookie: r.cookie })).j.quiz;
+    ok(z && z.img.startsWith('srv/') && (await call(R2 + 'img/' + z.img, { cookie: r.cookie })).status === 200, 'runden spiller med serverens ansigter');
+    ok((await call(R2 + 'img/' + z.img)).status === 401 && (await call(R2 + 'img/srv/../hemmelighed', { cookie: r.cookie })).status === 404, 'serverens ansigter kræver værtsadgang, og der er ingen vej ud af mappen');
+    ok((await call(R2 + 'api/billeder', { body: { slet: z.img }, cookie: r.cookie })).j.error && fs.readdirSync(path.join(DATA2, 'ansigter', 'foedsel')).length === 2, 'en fest kan ikke slette serverens ansigter');
+    await H2('lobby'); await H2('opt', { ans: false });
+    b = (await call(R2 + 'api/host', { cookie: r.cookie })).j; ok(b.faces === 0 && b.opt.std === true, 'festen kan slå serverens ansigter fra (uden at røre de medfølgende billeder)');
+    await H2('opt', { ans: true });
     let blocked = false;
     for (let i = 0; i < 12 && !blocked; i++) blocked = (await call('/jul/api/opret', { body: { opretKode: 'gæt' + i }, headers: px })).status === 429;
     ok(blocked, 'gætteri på opret-koden spærres');

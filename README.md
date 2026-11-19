@@ -55,6 +55,8 @@ Under **Billeder** på værtssiden:
 
 Billederne skaleres ned i browseren, før de sendes, og oplysninger fra kameraet (fx hvor billedet er taget) følger ikke med. Der er plads til 300 billeder og 120 ansigter pr. fest. Billederne ligger kun på den computer, serveren kører på (`data/rum/<festens id>/billeder/`), og kun værten og storskærmen kan hente dem.
 
+Driver du serveren, kan du give **alle** fester på den ansigter fra start: læg billederne i `data/ansigter/foedsel/` og `data/ansigter/porno/`. Hver vært kan slå dem fra under **Billeder**. Mappen ligger i `data/` og er aldrig med i git.
+
 En egen snapsevise kan lægges som `data/rum/<festens id>/billeder/lyd/snaps.mp3`. Ellers spilles en udgave fra YouTube.
 
 ## Sæt den på et domæne

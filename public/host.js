@@ -300,8 +300,8 @@ const YEAR = new Date().getFullYear();
 async function picsLoad() { try { pics = await api('billeder'); picsAt = Date.now(); } catch { } if (st && !editing) render(); }
 function picsCard(s) {
   // listen hentes, første gang kortet åbnes – og igen, når antallet af billeder på serveren har ændret sig
-  if (openD.has('billeder') && !sending && (!pics || pics.egne.length + (pics.brugStd ? pics.std : 0) !== s.pics || pics.ansigter.length !== s.faces) && Date.now() - picsAt > 1500) { picsAt = Date.now(); picsLoad(); }
-  const p = pics || { egne: [], ansigter: [], std: 0, brugStd: true, max: 300 };
+  if (openD.has('billeder') && !sending && (!pics || pics.egne.length + (pics.brugStd ? pics.std : 0) !== s.pics || pics.ansigter.length + (pics.brugAns ? pics.srvAnsigter : 0) !== s.faces) && Date.now() - picsAt > 1500) { picsAt = Date.now(); picsLoad(); }
+  const p = pics || { egne: [], ansigter: [], srvAnsigter: 0, std: 0, brugStd: true, max: 300 };
   const thumb = f => `${IMG}${f.split('/').map(encodeURIComponent).join('/')}`;
   const years = [...new Set(p.egne.map(x => x.aar))];
   return `<details class="card" data-d="billeder"><summary>Billeder</summary>
@@ -314,7 +314,8 @@ function picsCard(s) {
     ${p.egne.length ? `<p><small>${p.egne.length} egne billeder fra ${years.length} ${years.length === 1 ? 'år' : 'forskellige år'} (plads til ${p.max}). Ret årstallet i feltet, eller slet billedet.</small></p>
       <div class="pgrid">${p.egne.map(x => `<figure><img loading="lazy" src="${thumb(x.fil)}" alt=""><figcaption><input type="number" inputmode="numeric" min="1900" max="${YEAR}" value="${x.aar}" data-move="${esc(x.fil)}" aria-label="Årstal"><button class="x" data-pdel="${esc(x.fil)}" aria-label="Slet billedet">✕</button></figcaption></figure>`).join('')}</div>` : '<p><small>Ingen egne billeder endnu.</small></p>'}
     <h3 style="margin-top:18px">Veer eller vellyst?</h3>
-    <small>Et ansigt på skærmen – er det fra en fødsel eller fra en pornofilm? Runden kommer først frem i programmet, når der ligger ansigter her. Vælg for hvert billede, hvad det er. Brug kun billeder, I har lov til at bruge.</small>
+    <small>Et ansigt på skærmen – er det fra en fødsel eller fra en pornofilm? Runden er kun med i programmet, når der er ansigter. Læg jeres egne ind, og vælg for hvert billede, hvad det er. Brug kun billeder, I har lov til at bruge.</small>
+    ${p.srvAnsigter ? `<label class="chk"><input type="checkbox" id="ansOn" ${p.brugAns ? 'checked' : ''}> Brug de ${p.srvAnsigter} ansigter, der ligger klar på serveren</label>` : ''}
     <div class="row" style="margin-top:8px"><label class="btn alt filebtn">Vælg ansigter<input type="file" id="ff" accept="image/*" multiple hidden></label></div>
     ${upF.length ? `<div class="ups">${upF.map(u => `<div class="up"><img src="${u.url}" alt=""><select data-upc="${u.id}"><option value="">Vælg …</option><option value="foedsel" ${u.cat === 'foedsel' ? 'selected' : ''}>Fødsel</option><option value="porno" ${u.cat === 'porno' ? 'selected' : ''}>Porno</option></select><button class="x" data-updel="${u.id}" aria-label="Fjern">✕</button></div>`).join('')}</div>
       <div class="row"><button class="btn" data-a="upSendF" ${sending ? 'disabled' : ''}>${sending ? 'Lægger ind …' : `Læg ${upF.length} ${upF.length === 1 ? 'ansigt' : 'ansigter'} ind`}</button></div>` : ''}
@@ -356,7 +357,7 @@ async function shrink(file) {
 }
 async function picsChange(e) {
   const t = e.target;
-  if (t.id === 'stdOn') { await api('host', { action: 'opt', std: t.checked }).catch(() => { }); pics = null; return poll1(); }
+  if (t.id === 'stdOn' || t.id === 'ansOn') { await api('host', { action: 'opt', [t.id === 'stdOn' ? 'std' : 'ans']: t.checked }).catch(() => { }); await picsLoad(); return poll1(); }
   if (t.id === 'pf' || t.id === 'ff') {
     const files = [...t.files].slice(0, 60);
     for (const file of files) {
