@@ -1,0 +1,9 @@
+# festernes data (tilstand, egne billeder, værtskoder) og serverens egne indstillinger må aldrig deles
+data/
+config.json
+# egne lydfiler (oplæsning lavet med tools/citatlyd.js)
+public/lyd/
+.DS_Store
+.claude/
+node_modules/
+deploy.local

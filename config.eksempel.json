@@ -1,0 +1,8 @@
+{
+  "port": 8080,
+  "publicUrl": "https://fest.eksempel.dk",
+  "opretKode": "vælg-jeres-egen-kode",
+  "trustProxy": true,
+  "maxRum": 50,
+  "rumDage": 60
+}
